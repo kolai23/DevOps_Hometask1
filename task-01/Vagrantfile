@@ -1,0 +1,45 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/debian10"
+
+  config.vm.network "forwarded_port", guest: 8080, host: 8080, host_ip: "127.0.0.1"
+  config.vm.network "forwarded_port", guest: 8081, host: 8081, host_ip: "127.0.0.1"
+
+  config.vm.network "private_network", ip: "192.168.33.10"
+
+  config.vm.provider "virtualbox" do |vb|
+  vb.name = "staticsite.vagrant.vm"
+  vb.memory = "1024"
+  end
+
+  config.vm.provision "file", source: "D:/DevOps_Hometask/task-01/demosite-php/", destination: "/home/vagrant/"
+  config.vm.provision "file", source: "D:/DevOps_Hometask/task-01/demosite-static/", destination: "/home/vagrant/"
+  config.vm.provision "file", source: "D:/DevOps_Hometask/task-01/apache2.conf/", destination: "/home/vagrant/"
+
+  config.vm.provision "shell", inline: <<-SHELL
+  	apt-get update
+  	apt-get install -y apache2 php nano
+	mkdir /var/www/sait-php
+	mkdir /var/www/sait-static
+	chmod 775 /var/www/sait-php
+	chmod 775 /var/www/sait-static
+   	chown -R root:vagrant /var/www/sait-php
+   	chown -R root:vagrant /var/www/sait-static
+
+	cp /home/vagrant/demosite-php/index.php /var/www/sait-php
+	cp /home/vagrant/demosite-static/index.html /var/www/sait-static
+
+	cp /home/vagrant/apache2.conf/site-php.conf /etc/apache2/sites-available/
+	cp /home/vagrant/apache2.conf/site-static.conf /etc/apache2/sites-available/
+
+	cp /home/vagrant/apache2.conf/ports.conf /etc/apache2/
+	
+	a2ensite site-php.conf
+	a2ensite site-static.conf
+
+	service apache2 reload
+  SHELL
+end
